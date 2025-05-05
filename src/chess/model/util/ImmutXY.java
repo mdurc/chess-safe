@@ -1,4 +1,4 @@
-package chess.utils;
+package chess.model.util;
 
 import java.awt.Point;
 

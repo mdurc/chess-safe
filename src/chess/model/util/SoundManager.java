@@ -1,4 +1,4 @@
-package chess.utils;
+package chess.model.util;
 
 import chess.model.Move;
 import chess.model.Move.MoveType;
@@ -72,7 +72,6 @@ public class SoundManager {
 
         List<MoveType> types = move.getTypes();
         if (types.isEmpty()) return;
-        System.out.println(move.getTypes());
         if (types.contains(MoveType.CHECKMATE) || types.contains(MoveType.CHECK)) {
             playSound(SoundType.MOVE_CHECK);
         } else if (types.contains(MoveType.CAPTURE)) {

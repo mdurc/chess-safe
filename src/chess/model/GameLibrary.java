@@ -2,6 +2,7 @@ package chess.model;
 
 import java.io.*;
 import java.util.*;
+import chess.model.util.*;
 
 public class GameLibrary {
     private static final String LIB_DIR = "games/";
@@ -186,19 +187,20 @@ public class GameLibrary {
         Stack<GameNode> variationStack = new Stack<>();
 
         // split by space, before ( and after )
-        // "move1 (move2) move3)" ==> ["move1", "(", "move2", ")", "move3"]
-        String[] tokens = movesText.split("\\s+|(?=\\()|(?<=\\))");
+        // "move1 (move2) move3" ==> ["move1", "(", "move2", ")", "move3"]
+        String[] tokens = movesText.split("\s|(?=[()])|(?<=[()])");
         for (String token : tokens) {
+            token = token.trim();
             if (token.isEmpty()) continue;
 
-            if (token.startsWith("(")) {
+            if (token.equals("(")) {
                 // new variation
                 variationStack.push(currentNode);
                 currentNode = currentNode.getParentNode();
                 continue;
             }
 
-            if (token.endsWith(")")) {
+            if (token.equals(")")) {
                 // End variation
                 currentNode = variationStack.pop();
                 continue;
@@ -219,7 +221,7 @@ public class GameLibrary {
             }
 
             // Handle main move parsing
-            Move move = Notation.parseMove(token, currentNode);
+            Move move = NotationParser.parseMove(token, currentNode);
             if (move != null) {
                 // Handle variations
                 currentNode = currentNode.addNode(move);

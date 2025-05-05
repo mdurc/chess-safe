@@ -5,7 +5,7 @@ import chess.model.pieceData.Piece;
 
 import javax.swing.JOptionPane;
 import chess.model.*;
-import chess.utils.*;
+import chess.model.util.*;
 import java.util.*;
 import java.awt.event.KeyEvent;
 import java.io.*;
@@ -13,9 +13,8 @@ import java.io.*;
 public class ChessController {
     private ChessGame currentGame;
     private GameNode currentPosition; // node within the current Game
-    private final GameLibrary gameLibrary;
-
-    private final MainFrame view;
+    private GameLibrary gameLibrary;
+    private MainFrame view;
 
     private ImmutXY selectedSquare = null;
     private Piece draggedPiece = null;
@@ -24,8 +23,7 @@ public class ChessController {
     private boolean boardOrientation = true; // true is white at the bottom
 
     public ChessController() {
-        currentGame = new ChessGame();
-        currentPosition = currentGame.getFirstPosition();
+        startNewGame();
         gameLibrary = new GameLibrary();
         view = new MainFrame(this);
 
@@ -33,11 +31,34 @@ public class ChessController {
         SoundManager.playSound(SoundManager.SoundType.APP_LOAD);
     }
 
+    public void startNewGame() {
+        currentGame = new ChessGame();
+        currentPosition = currentGame.getFirstPosition();
+        if (view != null) {
+            refresh();
+        }
+    }
+
+    private void refresh() { view.updateBoard(); view.updateHistory(); }
+    public void focusBoard() { view.focusBoard(); }
+
+    public ChessGame getCurrentGame() { return currentGame; }
+    public GameNode getCurrentPosition() { return currentPosition; }
+    public void setCurrentGame(ChessGame game) { this.currentGame = game; refresh(); }
+    public void setCurrentPosition(GameNode position) { this.currentPosition = position; refresh(); }
+
+    public Piece getPieceAt(int row, int col) { return currentPosition.getPieceAt(row, col); }
+    public ImmutXY getSelectedPieceLocation() { return selectedSquare; }
+    public ImmutXY getCurrentDragPoint() { return currentDragPoint; }
+    public Piece getDraggedPiece() { return draggedPiece; }
+    public boolean getBoardOrientation() { return boardOrientation; }
+
     public void handleKeyPress(KeyEvent e) {
         GameNode nextPos = null;
+        boolean skipSound = false;
         switch(e.getKeyCode()) {
             case 37: // left
-                nextPos = currentPosition.getParentNode();
+                nextPos = currentPosition.getParentNode(); skipSound = true;
                 break;
             case 38: // up
                 nextPos = currentGame.getLastPosition();
@@ -49,7 +70,6 @@ public class ChessController {
                 nextPos = currentGame.getFirstPosition();
                 break;
             case 70: // 'f'
-                // TOGGLE FLIP COORDINATES
                 view.flipBoard();
                 view.updateBoard();
                 boardOrientation = !boardOrientation;
@@ -57,14 +77,28 @@ public class ChessController {
         }
         if (nextPos != null && !nextPos.equals(currentPosition)) {
             currentPosition = nextPos;
-            if (currentPosition.equals(currentGame.getFirstPosition())) {
-                SoundManager.playSound(SoundManager.SoundType.MOVE_SELF);
-            } else {
-                SoundManager.playSoundForMove(currentPosition.getMove());
+            if (!skipSound) {
+                if (currentPosition.equals(currentGame.getFirstPosition())) {
+                    SoundManager.playSound(SoundManager.SoundType.MOVE_SELF);
+                } else {
+                    SoundManager.playSoundForMove(currentPosition.getMove());
+                }
             }
-            view.updateBoard();
-            view.updateHistory();
+            refresh();
         }
+    }
+
+    public void handleMouseDrag(ImmutXY mouseLocation) {
+        if (selectedSquare != null) {
+            currentDragPoint = mouseLocation;
+        }
+    }
+
+    public void clearDragState() {
+        selectedSquare = null;
+        draggedPiece = null;
+        currentDragPoint = null;
+        view.updateBoard();
     }
 
     public Move handleMove(ImmutXY from, ImmutXY to) {
@@ -75,8 +109,7 @@ public class ChessController {
 
         System.out.println(currentPosition.getNotation());
 
-        view.updateBoard();
-        view.updateHistory();
+        refresh();
         return m;
     }
 
@@ -101,7 +134,7 @@ public class ChessController {
         int tileSize = view.getTileSize();
         int modelFromCol = selectedSquare.getX();
         int modelFromRow = selectedSquare.getY();
-        
+
         int viewToCol = mouseLocation.getX() / tileSize;
         int viewToRow = mouseLocation.getY() / tileSize;
         int modelToCol = boardOrientation ? viewToCol : (7 - viewToCol);
@@ -131,28 +164,7 @@ public class ChessController {
         return true;
     }
 
-    public void handleMouseDrag(ImmutXY mouseLocation) {
-        if (selectedSquare != null) {
-            currentDragPoint = mouseLocation;
-        }
-    }
 
-    // no dangerous rep exposures (all immutable)
-    public ImmutXY getSelectedPieceLocation() { return selectedSquare; }
-    public ImmutXY getCurrentDragPoint() { return currentDragPoint; }
-    public Piece getDraggedPiece() { return draggedPiece; }
-    public boolean getBoardOrientation() { return boardOrientation; }
-
-    public void clearDragState() {
-        selectedSquare = null;
-        draggedPiece = null;
-        currentDragPoint = null;
-        view.updateBoard();
-    }
-
-    public Piece getPieceAt(int row, int col) { return currentPosition.getPieceAt(row, col); }
-
-    public void saveAnnotation(String comment) { currentPosition.setComment(comment); }
     public List<String> getLibrarySavedGames() { return gameLibrary.getSavedGames(); }
     public void deleteGameFromLibrary(String name) { gameLibrary.deleteGame(name); }
 
@@ -163,18 +175,18 @@ public class ChessController {
             JOptionPane.showMessageDialog(view, "Error saving game: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
     public void loadGameFromLibrary(String name) {
         try {
             ChessGame loadedGame = gameLibrary.loadGame(name);
-            this.currentGame = loadedGame;
-            currentPosition = currentGame.getFirstPosition();
+            currentGame = loadedGame;
+            currentPosition = loadedGame.getFirstPosition();
             view.focusBoard();
-            view.updateBoard();
-            view.updateHistory();
-
-            this.currentGame.printMainline();
+            refresh();
+            loadedGame.printMainline();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(view, "Error loading game: " + e.getMessage(), "Load Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(view, "Error loading game: " + e.getMessage(),
+                "Load Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }

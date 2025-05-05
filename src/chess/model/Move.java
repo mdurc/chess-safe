@@ -1,7 +1,7 @@
 package chess.model;
 
 import chess.model.pieceData.Piece;
-import chess.utils.ImmutXY;
+import chess.model.util.ImmutXY;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -29,7 +29,6 @@ public class Move {
         CHECKMATE,
         DOUBLE_PAWN,
         EN_PASSANT;
-    
         @Override
         public String toString() {
             switch (this) {
@@ -46,7 +45,7 @@ public class Move {
             }
         }
     }
-    
+
     public Piece.PieceType getPromotionType() { return promotionType; }
     public Piece getPiece() { return piece; }
     public ImmutXY getFrom() { return from; }

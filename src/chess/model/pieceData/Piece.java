@@ -3,9 +3,9 @@ package chess.model.pieceData;
 import java.util.ArrayList;
 import java.util.List;
 
+import chess.model.boardData.BoardState;
 import chess.model.Move;
-import chess.model.boardAnalysis.BoardState;
-import chess.utils.ImmutXY;
+import chess.model.util.ImmutXY;
 
 public abstract class Piece {
     protected String name = "unnamed";

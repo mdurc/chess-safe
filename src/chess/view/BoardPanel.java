@@ -1,7 +1,6 @@
-// BoardPanel.java
 package chess.view;
 
-import chess.utils.*;
+import chess.model.util.*;
 import chess.controller.ChessController;
 import chess.model.pieceData.Piece;
 

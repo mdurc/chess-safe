@@ -1,10 +1,11 @@
 package chess.model.pieceData;
 
-import chess.model.boardAnalysis.BoardState;
 import chess.model.Move;
-import chess.utils.ImmutXY;
+import chess.model.util.ImmutXY;
 
 import java.util.*;
+
+import chess.model.boardData.BoardState;
 
 public class Knight extends Piece {
     public Knight(int id, boolean white, int row, int col) {

@@ -1,4 +1,3 @@
-// MainFrame.java
 package chess.view;
 
 import chess.controller.*;

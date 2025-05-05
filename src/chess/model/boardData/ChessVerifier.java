@@ -1,10 +1,10 @@
-package chess.model.boardAnalysis;
+package chess.model.boardData;
 
 import java.util.Arrays;
 
 import chess.model.pieceData.Piece;
 import chess.model.pieceData.Piece.PieceType;
-import chess.utils.ImmutXY;
+import chess.model.util.ImmutXY;
 
 public class ChessVerifier {
     private final BoardState board;
@@ -40,7 +40,7 @@ public class ChessVerifier {
                 }
             }
         }
-        
+
         int[][] kingOffsets = {{-1,-1}, {0,-1}, {1,-1}, {-1,0}, {1,0},{-1,1}, {0,1}, {1,1}};
         for (int[] offset : kingOffsets) {
             int x = target.getX() + offset[0];

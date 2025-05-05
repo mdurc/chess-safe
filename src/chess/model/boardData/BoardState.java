@@ -1,10 +1,10 @@
-package chess.model.boardAnalysis;
+package chess.model.boardData;
 
 import chess.model.Move;
 import chess.model.Move.MoveType;
 import chess.model.pieceData.Piece;
 import chess.model.pieceData.Piece.PieceType;
-import chess.utils.ImmutXY;
+import chess.model.util.ImmutXY;
 
 import java.util.ArrayList;
 import java.util.List;

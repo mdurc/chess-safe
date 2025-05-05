@@ -1,6 +1,7 @@
 package chess.view.components;
 
 import chess.controller.ChessController;
+
 import javax.swing.*;
 
 import java.awt.*;
@@ -18,25 +19,22 @@ public class GameLibraryPanel extends JPanel {
         this.controller = controller;
         setLayout(new BorderLayout());
 
-        // Game list
         listModel = new DefaultListModel<>();
         gameList = new JList<>(listModel);
         gameList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // Toolbar buttons
         JPanel buttonPanel = new JPanel(new GridLayout(1, 3));
         buttonPanel.add(createButton("Load Game", this::loadGame));
         buttonPanel.add(createButton("Save Current", this::saveCurrentGame));
         buttonPanel.add(createButton("Delete Game", this::deleteGame));
+        buttonPanel.add(createButton("New Game", this::newGame));
 
-        // Search panel
         JPanel searchPanel = new JPanel(new BorderLayout());
         JTextField searchField = new JTextField();
         searchField.getDocument().addDocumentListener(new SearchDocumentListener());
         searchPanel.add(new JLabel("Search:"), BorderLayout.WEST);
         searchPanel.add(searchField, BorderLayout.CENTER);
 
-        // Layout components
         add(searchPanel, BorderLayout.NORTH);
         add(new JScrollPane(gameList), BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
@@ -52,7 +50,6 @@ public class GameLibraryPanel extends JPanel {
 
     private void refreshGameList() {
         listModel.clear();
-        // Get game names from controller
         controller.getLibrarySavedGames().forEach(listModel::addElement);
     }
 
@@ -81,6 +78,10 @@ public class GameLibraryPanel extends JPanel {
         }
     }
 
+    private void newGame(ActionEvent e) {
+        controller.startNewGame();
+    }
+
     private class SearchDocumentListener implements DocumentListener {
         @Override
         public void insertUpdate(DocumentEvent e) { filterList(); }
@@ -90,7 +91,7 @@ public class GameLibraryPanel extends JPanel {
         public void changedUpdate(DocumentEvent e) { filterList(); }
 
         private void filterList() {
-            // Implement search filtering if needed
+            // TODO
         }
     }
 }

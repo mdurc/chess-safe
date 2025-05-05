@@ -2,7 +2,8 @@ package chess.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import chess.model.boardAnalysis.*;
+import chess.model.boardData.*;
+import chess.model.util.*;
 
 public class GameNode extends BoardState {
     private GameNode parentNode;
@@ -10,7 +11,7 @@ public class GameNode extends BoardState {
 
     private Move move;
     private String notation; // notation of the move field, located here because notation also revolves around the game state/current position, whether the move caused a check or checkmate, etc.
-    
+
     private String comment;
     private static int nextId = 0;
     private final int id;
@@ -31,7 +32,7 @@ public class GameNode extends BoardState {
         parentNode = oldState;
         children = new ArrayList<>();
         move = nextMove;
-        notation = Notation.convertToNotation(move, oldState);
+        notation = NotationParser.convertToNotation(move, oldState);
         comment = "";
         id = nextId++;
     }

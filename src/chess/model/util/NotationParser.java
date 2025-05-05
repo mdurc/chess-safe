@@ -1,17 +1,20 @@
-
-package chess.model;
+package chess.model.util;
 
 import chess.model.pieceData.Piece;
-import chess.model.boardAnalysis.*;
 import chess.model.pieceData.Piece.PieceType;
-import chess.utils.ImmutXY;
+import chess.model.util.ImmutXY;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+
+import chess.model.GameNode;
+import chess.model.Move;
+import chess.model.boardData.*;
+
 import java.util.HashSet;
 
 
-public class Notation {
+public class NotationParser {
     // Encode a move object into algebraic notation String
     public static String convertToNotation(Move move, GameNode currentNode) {
         if (move == null || currentNode == null) return "";
