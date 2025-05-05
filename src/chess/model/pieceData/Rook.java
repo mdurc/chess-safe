@@ -1,0 +1,41 @@
+package chess.model.pieceData;
+
+import chess.model.boardAnalysis.BoardState;
+import chess.model.Move;
+import chess.utils.ImmutXY;
+
+import java.util.*;
+
+public class Rook extends Piece {
+    public Rook(int id, boolean white, int row, int col) {
+        this.id = id;
+        name = white ? "wr" : "br";
+        this.white = white;
+        position = new ImmutXY(col, row);
+
+        type = PieceType.ROOK;
+    }
+
+    public PieceType getType() {
+        return type;
+    }
+
+    public double getPoints() {
+        return 5.0;
+    }
+
+    public List<Move> calculatePossibleMoves(BoardState board) {
+        if (board == null) {
+            throw new IllegalArgumentException("Null on calculating possible moves");
+        }
+
+        Piece thisPiece = board.getPieceAt(position.getY(), position.getX());
+
+        if (thisPiece == null || !(thisPiece instanceof Rook) ||  !thisPiece.equals(this)) {
+            throw new IllegalArgumentException("Not a pawn for input to pawn calculatePossibleMoves");
+        }
+
+        int[][] directions = {{0,1}, {1,0}, {0,-1}, {-1,0}};
+        return filterLegalMoves(calculateSlideMoves(directions, board), board);
+    }
+}
