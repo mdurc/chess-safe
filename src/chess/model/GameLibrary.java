@@ -17,6 +17,7 @@ public class GameLibrary {
         return new ArrayList<>(savedGames.keySet());
     }
 
+    // TODO remove name parameter and solely rely on the game.getFilename()
     public void saveGame(String name, ChessGame game) throws IOException {
         if (!name.endsWith(".pgn")) name += ".pgn";
         Path path = Paths.get(LIB_DIR, name);
