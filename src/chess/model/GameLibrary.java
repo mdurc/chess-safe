@@ -140,9 +140,9 @@ public class GameLibrary {
         }
     }
 
-    private ChessGame parsePgnFile(File file) throws IOException {
-        ChessGame game = new ChessGame(file.getName());
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+    public static ChessGame parsePgn(String pgn) throws IOException {
+        ChessGame game = new ChessGame(null);
+        try (BufferedReader reader = new BufferedReader(new StringReader(pgn))) {
             String line;
             boolean inHeaders = true;
             StringBuilder movesText = new StringBuilder();
@@ -164,7 +164,12 @@ public class GameLibrary {
         return game;
     }
 
-    private void parseHeaderLine(String line, ChessGame game) {
+    private ChessGame parsePgnFile(File file) throws IOException {
+        String pgn = Files.readString(file.toPath());
+        return parsePgn(pgn);
+    }
+
+    private static void parseHeaderLine(String line, ChessGame game) {
         System.out.println("Parsing header: " + line);
         int spaceIndex = line.indexOf(" ");
         String key = line.substring(1, spaceIndex);
@@ -172,7 +177,7 @@ public class GameLibrary {
         game.setTag(key, value);
     }
 
-    private void parseMovesText(String movesText, ChessGame game) {
+    private static void parseMovesText(String movesText, ChessGame game) {
         // game should be empty, with no children
         GameNode currentNode = game.getFirstPosition();
         assert currentNode.getNextChild() == null;

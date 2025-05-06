@@ -19,6 +19,10 @@ public class ChessGame {
         return filename;
     }
 
+    public void setFilename(String fn) {
+        filename = fn;
+    }
+
     public GameNode getFirstPosition() {
         return root;
     }

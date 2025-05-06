@@ -4,6 +4,7 @@ import chess.controller.ChessController;
 import chess.view.components.*;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 
 import javax.swing.*;
 
@@ -22,6 +23,7 @@ public class SidePanel extends JPanel {
         tabbedPane.addTab("Library", libraryPanel);
 
         add(tabbedPane, BorderLayout.CENTER);
+        setPreferredSize(new Dimension(500,400));
     }
 
     public void updateHistory() {

@@ -175,6 +175,15 @@ public class ChessController {
         }
     }
 
+    public void saveGame(ChessGame game) {
+        assert game.getFilename() != null : "filename was null when saving";
+        try {
+            gameLibrary.saveGame(game.getFilename(), game);
+        } catch(IOException e) {
+            JOptionPane.showMessageDialog(view, "Error saving game: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     public void loadGameFromLibrary(String name) {
         try {
             ChessGame loadedGame = gameLibrary.loadGame(name);

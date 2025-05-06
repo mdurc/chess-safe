@@ -6,16 +6,14 @@
 [x] Provide tree-structure to track different possible move orderings and variation
 [x] Provide per-move/turn comments/annotations
 [x] Provide the option to save current board and all variations to a pgn file that can be loaded back and used within chess websites.
-[ ] Provide option to load board pgn to analyze game.
+[x] Provide option to load board pgn to analyze game.
+[ ] Loader from chess.com/lichess extension into my files so that I can immediately query and analyze the game
 
 *More advanced features:*
 [ ] Provide evaluation bar with stockfish
 [ ] Provide best move view with stockfish
 [ ] Provide arrows and square highlighting
 [ ] Provide custom themes
-
-*Eventually:*
-[ ] Loader from chess.com/lichess into my database so that I can immediately query and analyze the game
 
 ### Controller
 - GameNode that represents the current board state that is in view.

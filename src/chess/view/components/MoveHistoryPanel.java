@@ -42,7 +42,6 @@ public class MoveHistoryPanel extends JScrollPane {
             controller.focusBoard();
         });
         setViewportView(moveList);
-        setPreferredSize(new Dimension(500, 400));
     }
 
     public void update() {
