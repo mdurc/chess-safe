@@ -8,8 +8,7 @@ import java.util.*;
 import chess.model.boardData.BoardState;
 
 public class Bishop extends Piece {
-    public Bishop(int id, boolean white, int row, int col) {
-        this.id = id;
+    public Bishop(boolean white, int row, int col) {
         name = white ? "wb" : "bb";
         this.white = white;
         position = new ImmutXY(col, row);

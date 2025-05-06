@@ -45,6 +45,11 @@ public class GameNode extends BoardState {
 
     public GameNode addNode(Move move) {
         GameNode newNode = new GameNode(this, move);
+        for (GameNode child : children) {
+            if (newNode.getNotation().equals(child.getNotation())) {
+                return child;
+            }
+        }
         children.add(newNode);
         return newNode;
     }

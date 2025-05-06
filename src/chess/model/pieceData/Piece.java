@@ -2,6 +2,7 @@ package chess.model.pieceData;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import chess.model.boardData.BoardState;
 import chess.model.Move;
@@ -11,23 +12,20 @@ public abstract class Piece {
     protected String name = "unnamed";
     protected boolean white = true; // 1 white, 0 black
     protected ImmutXY position = new ImmutXY(0,0);
-    protected int id = -1;
     protected PieceType type;
     protected boolean hasMoved = false;
 
     public enum PieceType { PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING }
 
-    private static int nextId = 0;
-
     // factory
     public static Piece makeNewPiece(boolean pieceColor, PieceType type, int row, int col) {
         switch(type) {
-            case PieceType.PAWN: return new Pawn(nextId++, pieceColor, row, col);
-            case PieceType.ROOK: return new Rook(nextId++, pieceColor, row, col);
-            case PieceType.KNIGHT: return new Knight(nextId++, pieceColor, row, col);
-            case PieceType.BISHOP: return new Bishop(nextId++, pieceColor, row, col);
-            case PieceType.QUEEN: return new Queen(nextId++, pieceColor, row, col);
-            case PieceType.KING: return new King(nextId++, pieceColor, row, col);
+            case PieceType.PAWN: return new Pawn(pieceColor, row, col);
+            case PieceType.ROOK: return new Rook(pieceColor, row, col);
+            case PieceType.KNIGHT: return new Knight(pieceColor, row, col);
+            case PieceType.BISHOP: return new Bishop(pieceColor, row, col);
+            case PieceType.QUEEN: return new Queen(pieceColor, row, col);
+            case PieceType.KING: return new King(pieceColor, row, col);
         }
         throw new IllegalArgumentException("Invalid piece type: " + type);
     }
@@ -54,12 +52,15 @@ public abstract class Piece {
         if (o == null) return false;
         if (o == this) return true;
         if (!(o instanceof Piece)) return false;
-        return id == ((Piece) o).id && type == ((Piece) o).type;
+        Piece p = (Piece) o;
+        return type == p.type && name.equals(p.name) &&
+            white == p.white && position.equals(p.position) &&
+            hasMoved && p.hasMoved;
     }
 
     @Override
     public int hashCode() {
-        return id;
+        return Objects.hash(white, hasMoved, position, type);
     }
 
     protected Move getMoveWithCheckTypes(Move move, BoardState board) {

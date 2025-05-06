@@ -1,6 +1,7 @@
 package chess.model;
 
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 import chess.model.util.*;
 
@@ -17,100 +18,97 @@ public class GameLibrary {
     }
 
     public void saveGame(String name, ChessGame game) throws IOException {
-        //if (!name.endsWith(".pgn")) name += ".pgn";
-        //Path path = Paths.get(LIB_DIR, name);
-        //Files.createDirectories(path.getParent());
-        //try (BufferedWriter writer = Files.newBufferedWriter(path)) {
-        //    writeHeaders(writer, game);
-        //    String movesText = generateMovesText(game);
-        //    System.out.println("Moves: \n" + movesText);
-        //    writer.write("\n" + movesText);
-        //}
-        //savedGames.put(name, game);
+        if (!name.endsWith(".pgn")) name += ".pgn";
+        Path path = Paths.get(LIB_DIR, name);
+        Files.createDirectories(path.getParent());
+        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+            writeHeaders(writer, game);
+            writer.write("\n" + generateMovesText(game));
+        }
+        savedGames.put(name, game);
     }
 
-    //private void writeHeaders(BufferedWriter writer, ChessGame game) throws IOException {
-        //String[] mandatoryTags = {"Event", "Site", "Date", "Round", "White", "Black", "Result"};
-        //for (String tag : mandatoryTags) {
-        //    String value = game.getTag(tag) != null ? game.getTag(tag) : "?";
-        //    writer.write(String.format("[%s \"%s\"]\n", tag, value));
-        //}
-        //for (Map.Entry<String, String> entry : game.getTags().entrySet()) {
-        //    String key = entry.getKey();
-        //    if (!Arrays.asList(mandatoryTags).contains(key)) {
-        //        writer.write(String.format("[%s \"%s\"]\n", key, entry.getValue()));
-        //    }
-        //}
-    //}
+    private void writeHeaders(BufferedWriter writer, ChessGame game) throws IOException {
+        String[] mandatoryTags = {"Event", "Site", "Date", "Round", "White", "Black", "Result"};
+        for (String tag : mandatoryTags) {
+            String value = game.getTag(tag) != null ? game.getTag(tag) : "?";
+            writer.write(String.format("[%s \"%s\"]\n", tag, value));
+        }
+        for (Map.Entry<String, String> entry : game.getTags().entrySet()) {
+            String key = entry.getKey();
+            if (!Arrays.asList(mandatoryTags).contains(key)) {
+                writer.write(String.format("[%s \"%s\"]\n", key, entry.getValue()));
+            }
+        }
+    }
 
-    //private String generateMovesText(ChessGame game) {
-        //return "";
-        //StringBuilder sb = new StringBuilder();
-        //GameNode currentNode = game.getRootNode();
-        //int moveNumber = 1;
-        //boolean isWhiteMove = true;
-        //List<GameNode> mainLine = new ArrayList<>();
-        //
-        //while (currentNode != null && !currentNode.getVariations().isEmpty()) {
-        //    currentNode = currentNode.getVariations().get(0);
-        //    mainLine.add(currentNode);
-        //}
-        //
-        //currentNode = game.getRootNode();
-        //for (GameNode node : mainLine) {
-        //    if (isWhiteMove) {
-        //        sb.append(moveNumber).append(". ");
-        //    } else {
-        //        sb.append(moveNumber).append("... ");
-        //    }
-        //    sb.append(node.getMove().getNotation());
-        //    if (node.getComment() != null && !node.getComment().isEmpty()) {
-        //        sb.append(" {").append(node.getComment()).append("}");
-        //    }
-        //    sb.append(" ");
-        //
-        //    if (!node.getVariations().isEmpty()) {
-        //        for (int i = 1; i < node.getVariations().size(); i++) {
-        //            sb.append("( ");
-        //            generateVariationText(node.getVariations().get(i), moveNumber, !isWhiteMove, sb);
-        //            sb.append(") ");
-        //        }
-        //    }
-        //
-        //    isWhiteMove = !isWhiteMove;
-        //    if (!isWhiteMove) {
-        //        moveNumber++;
-        //    }
-        //}
-        //return sb.toString().trim();
-    //}
+    private String generateMovesText(ChessGame game) {
+        StringBuilder sb = new StringBuilder();
+        GameNode currentNode = game.getFirstPosition();
+        int moveNumber = 1;
+        boolean isWhiteMove = true;
+        List<GameNode> mainLine = new ArrayList<>();
 
-    //private void generateVariationText(GameNode node, int currentMoveNumber, boolean isWhiteMove, StringBuilder sb) {
-        //List<GameNode> variationLine = new ArrayList<>();
-        //GameNode currentNode = node;
-        //while (currentNode != null && !currentNode.getVariations().isEmpty()) {
-        //    currentNode = currentNode.getVariations().get(0);
-        //    variationLine.add(currentNode);
-        //}
-        //
-        //currentNode = node;
-        //for (GameNode n : variationLine) {
-        //    if (isWhiteMove) {
-        //        sb.append(currentMoveNumber).append(". ");
-        //    } else {
-        //        sb.append(currentMoveNumber).append("... ");
-        //    }
-        //    sb.append(n.getMove().getNotation());
-        //    if (n.getComment() != null && !n.getComment().isEmpty()) {
-        //        sb.append(" {").append(n.getComment()).append("}");
-        //    }
-        //    sb.append(" ");
-        //    isWhiteMove = !isWhiteMove;
-        //    if (!isWhiteMove) {
-        //        currentMoveNumber++;
-        //    }
-        //}
-    //}
+        while (currentNode != null && !currentNode.getChildren().isEmpty()) {
+            currentNode = currentNode.getNextChild();
+            mainLine.add(currentNode);
+        }
+
+        currentNode = game.getFirstPosition();
+        for (GameNode node : mainLine) {
+            if (isWhiteMove) {
+                sb.append(moveNumber).append(". ");
+            } else {
+                sb.append(moveNumber).append("... ");
+            }
+            sb.append(node.getNotation());
+            if (node.getComment() != null && !node.getComment().isEmpty()) {
+                sb.append(" {").append(node.getComment()).append("}");
+            }
+            sb.append(" ");
+
+            if (!node.getChildren().isEmpty()) {
+                for (int i = 1; i < node.getChildren().size(); i++) {
+                    sb.append("( ");
+                    generateVariationText(node.getChildren().get(i), moveNumber, !isWhiteMove, sb);
+                    sb.append(") ");
+                }
+            }
+
+            isWhiteMove = !isWhiteMove;
+            if (!isWhiteMove) {
+                moveNumber++;
+            }
+        }
+        return sb.toString().trim();
+    }
+
+    private void generateVariationText(GameNode node, int currentMoveNumber, boolean isWhiteMove, StringBuilder sb) {
+        List<GameNode> variationLine = new ArrayList<>();
+        GameNode currentNode = node;
+        while (currentNode != null && !currentNode.getChildren().isEmpty()) {
+            currentNode = currentNode.getChildren().get(0);
+            variationLine.add(currentNode);
+        }
+
+        currentNode = node;
+        for (GameNode n : variationLine) {
+            if (isWhiteMove) {
+                sb.append(currentMoveNumber).append(". ");
+            } else {
+                sb.append(currentMoveNumber).append("... ");
+            }
+            sb.append(n.getNotation());
+            if (n.getComment() != null && !n.getComment().isEmpty()) {
+                sb.append(" {").append(n.getComment()).append("}");
+            }
+            sb.append(" ");
+            isWhiteMove = !isWhiteMove;
+            if (!isWhiteMove) {
+                currentMoveNumber++;
+            }
+        }
+    }
 
     public ChessGame loadGame(String name) throws FileNotFoundException {
         if (!savedGames.containsKey(name)) {
@@ -143,7 +141,7 @@ public class GameLibrary {
     }
 
     private ChessGame parsePgnFile(File file) throws IOException {
-        ChessGame game = new ChessGame();
+        ChessGame game = new ChessGame(file.getName());
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             boolean inHeaders = true;
@@ -158,11 +156,6 @@ public class GameLibrary {
                 } else {
                     // stop checking for headers after starting the first move of the pgn
                     inHeaders = false;
-
-                    // should be moves starting with move number
-                    //1. e4 d5 2. exd5 e6 3. dxe6 Qd7 (3... Bxe6 4. d4 Qxd4 (4... Nf6 5. Be2 Bc5 (5...
-                    //Bb4+ 6. Bd2 Bxd2+ 7. Nxd2 O-O 8. Ngf3 Bd5 9. O-O Bxf3 (9... Nc6 10. c4 Bxc4))))
-                    //4. exd7+ *
                     movesText.append(line).append(" ");
                 }
             }

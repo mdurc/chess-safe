@@ -8,8 +8,7 @@ import java.util.*;
 import chess.model.boardData.BoardState;
 
 public class Rook extends Piece {
-    public Rook(int id, boolean white, int row, int col) {
-        this.id = id;
+    public Rook(boolean white, int row, int col) {
         name = white ? "wr" : "br";
         this.white = white;
         position = new ImmutXY(col, row);

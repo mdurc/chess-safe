@@ -8,8 +8,7 @@ import java.util.*;
 import chess.model.boardData.BoardState;
 
 public class Knight extends Piece {
-    public Knight(int id, boolean white, int row, int col) {
-        this.id = id;
+    public Knight(boolean white, int row, int col) {
         name = white ? "wn" : "bn";
         this.white = white;
         position = new ImmutXY(col, row);

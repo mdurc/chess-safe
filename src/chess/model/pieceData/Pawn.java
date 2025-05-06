@@ -10,8 +10,7 @@ import chess.model.boardData.BoardState;
 public class Pawn extends Piece {
     private PieceType defaultPromotionType = PieceType.QUEEN;
 
-    public Pawn(int id, boolean white, int row, int col) {
-        this.id = id;
+    public Pawn(boolean white, int row, int col) {
         name = white ? "wp" : "bp";
         this.white = white;
         position = new ImmutXY(col, row);

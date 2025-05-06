@@ -63,7 +63,10 @@ public class GameLibraryPanel extends JPanel {
     }
 
     private void saveCurrentGame(ActionEvent e) {
-        String gameName = JOptionPane.showInputDialog(this, "Enter game name:");
+        String gameName = controller.getCurrentGameName();
+        if (gameName == null) {
+            gameName = JOptionPane.showInputDialog(this, "Enter game name:");
+        }
         if (gameName != null && !gameName.trim().isEmpty()) {
             controller.saveCurrentGameToLibrary(gameName);
             refreshGameList();

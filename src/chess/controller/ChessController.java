@@ -32,7 +32,7 @@ public class ChessController {
     }
 
     public void startNewGame() {
-        currentGame = new ChessGame();
+        currentGame = new ChessGame(null);
         currentPosition = currentGame.getFirstPosition();
         if (view != null) {
             refresh();
@@ -43,6 +43,7 @@ public class ChessController {
     public void focusBoard() { view.focusBoard(); }
 
     public ChessGame getCurrentGame() { return currentGame; }
+    public String getCurrentGameName() { return currentGame.getFilename(); }
     public GameNode getCurrentPosition() { return currentPosition; }
     public void setCurrentGame(ChessGame game) { this.currentGame = game; refresh(); }
     public void setCurrentPosition(GameNode position) { this.currentPosition = position; refresh(); }
@@ -141,7 +142,6 @@ public class ChessController {
         int modelToRow = boardOrientation ? viewToRow : (7 - viewToRow);
 
         if (modelFromCol == modelToCol && modelFromRow == modelToRow) {
-            // Clicked but didn't move - just deselect
             clearDragState(); // clear drag and repaint board
             return false;
         }
@@ -163,7 +163,6 @@ public class ChessController {
         clearDragState();
         return true;
     }
-
 
     public List<String> getLibrarySavedGames() { return gameLibrary.getSavedGames(); }
     public void deleteGameFromLibrary(String name) { gameLibrary.deleteGame(name); }

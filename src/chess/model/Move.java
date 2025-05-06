@@ -3,6 +3,7 @@ package chess.model;
 import chess.model.pieceData.Piece;
 import chess.model.util.ImmutXY;
 import java.util.List;
+import java.util.Objects;
 import java.util.ArrayList;
 
 public class Move {

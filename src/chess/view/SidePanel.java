@@ -10,14 +10,12 @@ import javax.swing.*;
 public class SidePanel extends JPanel {
     private final GameLibraryPanel libraryPanel;
     private final MoveHistoryPanel historyPanel;
-    private final AnnotationEditor annotationEditor;
 
     public SidePanel(ChessController controller) {
         super(new BorderLayout());
 
         libraryPanel = new GameLibraryPanel(controller);
         historyPanel = new MoveHistoryPanel(controller);
-        annotationEditor = new AnnotationEditor(controller);
 
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("History", historyPanel);

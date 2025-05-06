@@ -7,11 +7,16 @@ public class ChessGame {
     // for pgn data such as event, round, date, result, etc.
     // only relevant to loaded ChessGames from PGN then to persist the pgn data
     private final Map<String, String> tags = new HashMap<>();
-
     private final GameNode root;
+    private String filename;
 
-    public ChessGame() {
+    public ChessGame(String filename) {
         root = new GameNode();
+        this.filename = filename;
+    }
+
+    public String getFilename() {
+        return filename;
     }
 
     public GameNode getFirstPosition() {
