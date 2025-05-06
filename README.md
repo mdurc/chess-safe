@@ -1,5 +1,7 @@
 ## for storing my repetoire and analyzing my chess games
 
+![](resources/img0.png)
+
 *Basic Desired features:*
 - [x] Display a single-player chess game
 - [x] Provide tracking of moves
@@ -7,7 +9,6 @@
 - [x] Provide per-move/turn comments/annotations
 - [x] Provide the option to save current board and all variations to a pgn file that can be loaded back and used within chess websites.
 - [x] Provide option to load board pgn to analyze game.
-- [ ] Loader from chess.com/lichess extension into my files so that I can immediately query and analyze the game
 
 *More advanced features:*
 - [ ] Provide evaluation bar with stockfish
