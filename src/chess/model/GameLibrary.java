@@ -58,7 +58,6 @@ public class GameLibrary {
     private String generateMovesText(ChessGame game) {
         StringBuilder sb = new StringBuilder();
         int moveNumber = 1;
-        boolean isWhiteMove = true;
 
         List<GameNode> mainLine = new ArrayList<>();
         GameNode currentNode = game.getFirstPosition();
@@ -68,30 +67,46 @@ public class GameLibrary {
             mainLine.add(currentNode);
         }
 
-        for (GameNode node : mainLine) {
-            if (isWhiteMove) {
-                sb.append(moveNumber).append(". ");
-            } else {
-                sb.append(moveNumber).append("... ");
-            }
-            sb.append(node.getNotation());
-            if (node.getComment() != null && !node.getComment().isEmpty()) {
-                sb.append(" {").append(node.getComment()).append("}");
-            }
-            sb.append(" ");
+        for (int i = 0; i < mainLine.size(); i += 2) {
+            sb.append(moveNumber).append(".");
 
-            if (!node.getChildren().isEmpty()) {
-                for (int i = 1; i < node.getChildren().size(); i++) {
-                    sb.append("( ");
-                    generateVariationText(node.getChildren().get(i), moveNumber, !isWhiteMove, sb);
-                    sb.append(") ");
+            GameNode whiteMove = mainLine.get(i);
+
+            // add white's move
+            sb.append(whiteMove.getNotation());
+            if (whiteMove.getComment() != null && !whiteMove.getComment().isEmpty()) {
+                sb.append(" {").append(whiteMove.getComment()).append("}");
+            }
+
+            // add variations to white's move
+            if (!whiteMove.getChildren().isEmpty()) {
+                for (int j = 1; j < whiteMove.getChildren().size(); j++) {
+                    sb.append(" (");
+                    generateVariationText(whiteMove.getChildren().get(j), moveNumber, true, sb);
+                    sb.append(")");
                 }
             }
 
-            isWhiteMove = !isWhiteMove;
-            if (!isWhiteMove) {
-                moveNumber++;
+            // add black's move if it exists
+            if (i + 1 < mainLine.size()) {
+                sb.append(" ");
+                GameNode blackMove = mainLine.get(i + 1);
+                sb.append(blackMove.getNotation());
+                if (blackMove.getComment() != null && !blackMove.getComment().isEmpty()) {
+                    sb.append(" {").append(blackMove.getComment()).append("}");
+                }
+
+                // add variations to black's move
+                if (!blackMove.getChildren().isEmpty()) {
+                    for (int j = 1; j < blackMove.getChildren().size(); j++) {
+                        sb.append(" (");
+                        generateVariationText(blackMove.getChildren().get(j), moveNumber, false, sb);
+                        sb.append(")");
+                    }
+                }
             }
+            sb.append(" ");
+            moveNumber++;
         }
         return sb.toString().trim();
     }
@@ -104,22 +119,28 @@ public class GameLibrary {
             variationLine.add(currentNode);
         }
 
-        currentNode = node;
-        for (GameNode n : variationLine) {
-            if (isWhiteMove) {
-                sb.append(currentMoveNumber).append(". ");
-            } else {
-                sb.append(currentMoveNumber).append("... ");
+        for (int i = 0; i < variationLine.size(); i += 2) {
+            // add move number before white's move
+            sb.append(currentMoveNumber).append(".");
+
+            // add white's move
+            GameNode whiteMove = variationLine.get(i);
+            sb.append(whiteMove.getNotation());
+            if (whiteMove.getComment() != null && !whiteMove.getComment().isEmpty()) {
+                sb.append(" {").append(whiteMove.getComment()).append("}");
             }
-            sb.append(n.getNotation());
-            if (n.getComment() != null && !n.getComment().isEmpty()) {
-                sb.append(" {").append(n.getComment()).append("}");
+
+            // add black's move if it exists
+            if (i + 1 < variationLine.size()) {
+                sb.append(" ");
+                GameNode blackMove = variationLine.get(i + 1);
+                sb.append(blackMove.getNotation());
+                if (blackMove.getComment() != null && !blackMove.getComment().isEmpty()) {
+                    sb.append(" {").append(blackMove.getComment()).append("}");
+                }
             }
             sb.append(" ");
-            isWhiteMove = !isWhiteMove;
-            if (!isWhiteMove) {
-                currentMoveNumber++;
-            }
+            currentMoveNumber++;
         }
     }
 
