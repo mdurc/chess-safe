@@ -24,48 +24,50 @@ public class GameLibrary {
 
     public GameLibraryNode getRootNode() { return rootNode; }
 
-    public void saveGameToPath(String path, ChessGame game) throws IOException {
-        if (!path.endsWith(".pgn")) path += ".pgn";
-        Path fullPath = Paths.get(LIB_DIR, path);
-        Files.createDirectories(fullPath.getParent());
-        try (BufferedWriter writer = Files.newBufferedWriter(fullPath)) {
-            writeHeaders(writer, game);
-            writer.write("\n" + generateMovesText(game));
-        }
-        gameFilePaths.put(path, fullPath.toString());
-        loadedGames.put(path, game); // cache the newly saved game
-        updateFileTree();
-    }
-
     public void createDirectory(String path) throws IOException {
         Path fullPath = Paths.get(LIB_DIR, path);
         Files.createDirectories(fullPath);
         updateFileTree();
     }
 
-    private void writeHeaders(BufferedWriter writer, ChessGame game) throws IOException {
+    public void saveGameToLibPath(String path, ChessGame game) throws IOException {
+        if (!path.endsWith(".pgn")) path += ".pgn";
+        Path fullPath = Paths.get(LIB_DIR, path);
+        Files.createDirectories(fullPath.getParent());
+
+        String pgn = generatePGNString(game);
+        Files.writeString(fullPath, pgn);
+
+        gameFilePaths.put(path, fullPath.toString());
+        loadedGames.put(path, game); // cache the newly saved game
+        updateFileTree();
+    }
+
+    public static String generatePGNString(ChessGame game) {
+        StringBuilder sb = new StringBuilder();
+        appendHeaders(sb, game);
+        sb.append("\n");
+
+        GameNode root = game.getFirstPosition();
+        // not white turn, as this is acting as the root (before first move).
+        // skip the current (blank root) move
+        appendMoves(root, 1, false, sb, false, false, true);
+
+        return sb.toString();
+    }
+
+    private static void appendHeaders(StringBuilder sb, ChessGame game) {
         String[] mandatoryTags = {"Event", "Site", "Date", "Round", "White", "Black", "Result"};
         for (String tag : mandatoryTags) {
             String value = game.getTag(tag) != null ? game.getTag(tag) : "?";
-            writer.write(String.format("[%s \"%s\"]\n", tag, value));
+            sb.append(String.format("[%s \"%s\"]\n", tag, value));
         }
         for (Map.Entry<String, String> entry : game.getTags().entrySet()) {
             String key = entry.getKey();
             if (!Arrays.asList(mandatoryTags).contains(key)) {
-                writer.write(String.format("[%s \"%s\"]\n", key, entry.getValue()));
+                sb.append(String.format("[%s \"%s\"]\n", key, entry.getValue()));
             }
         }
-    }
-
-    public static String generateMovesText(ChessGame game) {
-        StringBuilder sb = new StringBuilder();
-        GameNode root = game.getFirstPosition();
-        if (!root.getChildren().isEmpty()) {
-            GameNode firstMove = root.getChildren().get(0);
-            appendMoves(firstMove, 1, true, sb, false, false, false);
-        }
-
-        return sb.toString().trim();
     }
 
     private static void appendMoves(GameNode node, int moveNumber,
@@ -148,6 +150,7 @@ public class GameLibrary {
             throw new FileNotFoundException("Game file not found: " + filePath);
         }
         ChessGame game = parsePgnFile(file);
+        game.setFilename(path); // set the filename so we know where to save back to
         loadedGames.put(path, game); // cache the loaded game
         return game;
     }

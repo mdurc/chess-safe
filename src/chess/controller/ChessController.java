@@ -39,7 +39,7 @@ public class ChessController {
         }
     }
 
-    private void refresh() { view.updateBoard(); view.updateHistory(); }
+    private void refresh() { view.updateBoard(); view.updateLibrary(); view.updateHistory(); }
     public void focusBoard() { view.focusBoard(); }
 
     public ChessGame getCurrentGame() { return currentGame; }
@@ -108,8 +108,34 @@ public class ChessController {
 
         currentPosition = currentPosition.addNode(m);
 
+        // auto-detect opening from eco if not already set
+        autoDetectEcoCode();
+
         refresh();
         return m;
+    }
+
+    private void autoDetectEcoCode() {
+        String detectedEco = detectEcoFromMoves(currentGame);
+        if (detectedEco != null) {
+            currentGame.setTag("ECO", detectedEco);
+        }
+    }
+
+    public String detectEcoFromMoves(ChessGame game) {
+        // get the moves of the mainline
+        StringBuilder sb = new StringBuilder();
+        GameNode root = game.getFirstPosition();
+        if (!root.getChildren().isEmpty()) {
+            GameNode node = root.getChildren().get(0);
+            while (node != null) {
+                sb.append(node.getNotation()).append(" ");
+                if (node.getChildren().isEmpty()) break;
+                node = node.getChildren().get(0);
+            }
+        }
+
+        return chess.model.util.EcoDatabase.getEcoCode(sb.toString().trim());
     }
 
     public void handlePieceSelection(ImmutXY mouseLocation) {
@@ -169,9 +195,9 @@ public class ChessController {
     public void deleteGameFromLibrary(String name) { gameLibrary.deleteGame(name); }
     public void deleteDirectoryFromLibrary(String path) { gameLibrary.deleteDirectory(path); }
 
-    public void saveGameToLibraryPath(String path, ChessGame game) {
+    public void saveToLibrary(String path, ChessGame game) {
         try {
-            gameLibrary.saveGameToPath(path, game);
+            gameLibrary.saveGameToLibPath(path, game);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(view,
                     "Error saving game: " + e.getMessage(),
@@ -188,6 +214,10 @@ public class ChessController {
             ChessGame loadedGame = gameLibrary.loadGame(name);
             currentGame = loadedGame;
             currentPosition = loadedGame.getFirstPosition();
+
+            // auto-detect opening from eco if not already set
+            autoDetectEcoCode();
+
             view.focusBoard();
             refresh();
             //loadedGame.printMainline();
@@ -195,5 +225,27 @@ public class ChessController {
             JOptionPane.showMessageDialog(view, "Error loading game: " + e.getMessage(),
                 "Load Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    public void saveCurrentGame() {
+        String filename = currentGame.getFilename();
+        if (filename != null) {
+            // save to the same path where the game was loaded from
+            saveToLibrary(filename, currentGame);
+        } else {
+            System.out.println("reverting to saveas");
+            // no filename set, prompt for save as
+            saveGameAs();
+        }
+    }
+
+    public void saveGameAs() {
+        String gameName = JOptionPane.showInputDialog(view, "Enter game name:");
+        if (gameName != null && !gameName.trim().isEmpty()) {
+            gameName = gameName.trim();
+            saveToLibrary(gameName, currentGame);
+            currentGame.setFilename(gameName);
+        }
+        refresh();
     }
 }

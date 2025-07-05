@@ -38,6 +38,7 @@ public class ChessGame {
     public String getTag(String key) { return tags.get(key); }
     public Map<String, String> getTags() { return new HashMap<>(tags); }
     public void setTag(String key, String value) { tags.put(key, value); }
+    public void removeTag(String key) { tags.remove(key); }
 
     public void playFirstMove(Move move) {
         root.addNode(move);

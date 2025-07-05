@@ -10,22 +10,28 @@ import javax.swing.*;
 public class MainFrame extends JFrame {
     private static final int TILE_SIZE = 80;
     private final BoardPanel boardPanel;
-    private final SidePanel sidePanel;
+    private final SidePanel leftPanel;
+    private final SidePanel rightPanel;
 
     public MainFrame(ChessController controller) {
         setTitle("chess");
         setLayout(new BorderLayout());
 
         this.boardPanel = new BoardPanel(controller, TILE_SIZE);
-        this.sidePanel = new SidePanel(controller);
+        this.leftPanel = new SidePanel(controller, true);
+        this.rightPanel = new SidePanel(controller, false);
 
+        add(leftPanel, BorderLayout.WEST);
         add(boardPanel, BorderLayout.CENTER);
-        add(sidePanel, BorderLayout.EAST);
+        add(rightPanel, BorderLayout.EAST);
 
-        setSize(1200, 800);
+        int width = 1445;
+        int height = 800;
+
+        setSize(width, height);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        setPreferredSize(new Dimension(1200, 800));
+        setPreferredSize(new Dimension(width, height));
         pack();
         setLocationRelativeTo(null);
         setVisible(true);
@@ -35,7 +41,8 @@ public class MainFrame extends JFrame {
     }
     public void focusBoard() { boardPanel.requestFocusInWindow(); }
     public void updateBoard() { boardPanel.repaint(); }
-    public void updateHistory() { sidePanel.updateHistory(); }
+    public void updateHistory() { leftPanel.updateHistory(); rightPanel.updateHistory(); }
+    public void updateLibrary() { leftPanel.updateLibrary(); rightPanel.updateLibrary(); }
     public void flipBoard() { boardPanel.flipBoard(); }
     public int getTileSize() { return TILE_SIZE; }
 }
