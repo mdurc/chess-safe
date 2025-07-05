@@ -9,14 +9,12 @@ public class GameLibraryNode {
     private final String fullPath;
     private final boolean isDirectory;
     private final List<GameLibraryNode> children;
-    private ChessGame game; // only for PGN files
 
     public GameLibraryNode(String name, String fullPath, boolean isDirectory) {
         this.name = name;
         this.fullPath = fullPath;
         this.isDirectory = isDirectory;
         this.children = new ArrayList<>();
-        this.game = null;
     }
 
     public String getName() { return name; }
@@ -34,10 +32,6 @@ public class GameLibraryNode {
     public void addChild(GameLibraryNode child) { children.add(child); }
 
     public void removeChild(GameLibraryNode child) { children.remove(child); }
-
-    public ChessGame getGame() { return game; }
-
-    public void setGame(ChessGame game) { this.game = game; }
 
     public String getDisplayName() {
         if (isDirectory) {

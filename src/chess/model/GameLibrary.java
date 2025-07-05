@@ -7,7 +7,8 @@ import chess.model.util.*;
 
 public class GameLibrary {
     private static final String LIB_DIR = "games/";
-    private final Map<String, ChessGame> savedGames = new HashMap<>();
+    private final Map<String, String> gameFilePaths = new HashMap<>();  // path -> file path
+    private final Map<String, ChessGame> loadedGames = new HashMap<>(); // path -> loaded game (for caching)
     private final GameLibraryNode rootNode;
 
     public GameLibrary() {
@@ -18,7 +19,7 @@ public class GameLibrary {
     public String getLib() { return LIB_DIR; }
 
     public List<String> getSavedGames() {
-        return new ArrayList<>(savedGames.keySet());
+        return new ArrayList<>(gameFilePaths.keySet());
     }
 
     public GameLibraryNode getRootNode() { return rootNode; }
@@ -31,7 +32,8 @@ public class GameLibrary {
             writeHeaders(writer, game);
             writer.write("\n" + generateMovesText(game));
         }
-        savedGames.put(path, game);
+        gameFilePaths.put(path, fullPath.toString());
+        loadedGames.put(path, game); // cache the newly saved game
         updateFileTree();
     }
 
@@ -113,30 +115,48 @@ public class GameLibrary {
         appendMoves(children.get(0), nextMoveNumber, !isWhiteTurn, sb, false, false, true);
     }
 
-    public ChessGame loadGame(String name) throws FileNotFoundException {
-        // try exact match first
-        if (savedGames.containsKey(name)) {
-            return savedGames.get(name);
+    public ChessGame loadGame(String name) throws FileNotFoundException, IOException {
+        // check if already loaded
+        if (loadedGames.containsKey(name)) {
+            return loadedGames.get(name);
         }
-        // try with .pgn extension
+
         String withExtension = name.endsWith(".pgn") ? name : name + ".pgn";
-        if (savedGames.containsKey(withExtension)) {
-            return savedGames.get(withExtension);
+        if (loadedGames.containsKey(withExtension)) {
+            return loadedGames.get(withExtension);
         }
-        // try to find by display name
-        for (Map.Entry<String, ChessGame> entry : savedGames.entrySet()) {
+
+        // check if we have it in our paths
+        if (gameFilePaths.containsKey(name)) {
+            return loadGameFromFile(name, gameFilePaths.get(name));
+        }
+        if (gameFilePaths.containsKey(withExtension)) {
+            return loadGameFromFile(withExtension, gameFilePaths.get(withExtension));
+        }
+        for (Map.Entry<String, String> entry : gameFilePaths.entrySet()) {
             String fileName = new File(entry.getKey()).getName();
             if (fileName.equals(withExtension) || fileName.equals(name)) {
-                return entry.getValue();
+                return loadGameFromFile(entry.getKey(), entry.getValue());
             }
         }
         throw new FileNotFoundException("Game not found: " + name);
     }
 
+    private ChessGame loadGameFromFile(String path, String filePath) throws IOException {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            throw new FileNotFoundException("Game file not found: " + filePath);
+        }
+        ChessGame game = parsePgnFile(file);
+        loadedGames.put(path, game); // cache the loaded game
+        return game;
+    }
+
     public void deleteGame(String name) {
         File file = new File(LIB_DIR + name);
         if (file.delete()) {
-            savedGames.remove(name);
+            gameFilePaths.remove(name);
+            loadedGames.remove(name);
             updateFileTree();
         }
     }
@@ -173,7 +193,8 @@ public class GameLibrary {
     private void updateFileTree() {
         // clear existing children
         rootNode.getChildren().clear();
-        savedGames.clear();
+        gameFilePaths.clear();
+        loadedGames.clear();
 
         File dir = new File(LIB_DIR);
         if (!dir.exists()) return;
@@ -199,13 +220,8 @@ public class GameLibrary {
             if (isDirectory) {
                 buildFileTree(file, node);
             } else if (file.getName().toLowerCase().endsWith(".pgn")) {
-                try {
-                    ChessGame game = parsePgnFile(file);
-                    node.setGame(game);
-                    savedGames.put(relativePath, game);
-                } catch (IOException e) {
-                    System.err.println("Error loading game: " + file.getName());
-                }
+                // Store file path instead of parsing the game
+                gameFilePaths.put(relativePath, file.getPath());
             }
             parentNode.addChild(node);
         }
