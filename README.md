@@ -1,7 +1,7 @@
 ## for storing my repetoire and analyzing my chess games
 
-<img src="resources/img0.png" width="50%">
 <img src="resources/img1.png" width="50%">
+<img src="resources/img2.png" width="50%">
 
 *Basic Desired features:*
 - [x] Display a single-player chess game
