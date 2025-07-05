@@ -340,7 +340,8 @@ public class GameLibrary {
                 }
             }
 
-            if (token.equals("*") || token.equals("1-0") || token.equals("0-1")) { // Game termination
+            if (token.equals("*") || token.equals("1-0") ||
+                token.equals("0-1") || token.equals("1/2-1/2")) {
                 continue;
             }
 
