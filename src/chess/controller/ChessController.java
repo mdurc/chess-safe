@@ -108,8 +108,6 @@ public class ChessController {
 
         currentPosition = currentPosition.addNode(m);
 
-        System.out.println(currentPosition.getNotation());
-
         refresh();
         return m;
     }
@@ -164,24 +162,25 @@ public class ChessController {
         return true;
     }
 
+    // Game library methods
+    public String getLibPath() { return gameLibrary.getLib(); }
     public List<String> getLibrarySavedGames() { return gameLibrary.getSavedGames(); }
+    public GameLibraryNode getLibraryRootNode() { return gameLibrary.getRootNode(); }
     public void deleteGameFromLibrary(String name) { gameLibrary.deleteGame(name); }
+    public void deleteDirectoryFromLibrary(String path) { gameLibrary.deleteDirectory(path); }
 
-    public void saveCurrentGameToLibrary(String name) {
+    public void saveGameToLibraryPath(String path, ChessGame game) {
         try {
-            gameLibrary.saveGame(name, currentGame);
+            gameLibrary.saveGameToPath(path, game);
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(view, "Error saving game: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(view,
+                    "Error saving game: " + e.getMessage(),
+                    "Save Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    public void saveGame(ChessGame game) {
-        assert game.getFilename() != null : "filename was null when saving";
-        try {
-            gameLibrary.saveGame(game.getFilename(), game);
-        } catch(IOException e) {
-            JOptionPane.showMessageDialog(view, "Error saving game: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE);
-        }
+    public void createDirectoryInLibrary(String path) throws IOException {
+        gameLibrary.createDirectory(path);
     }
 
     public void loadGameFromLibrary(String name) {
@@ -191,7 +190,7 @@ public class ChessController {
             currentPosition = loadedGame.getFirstPosition();
             view.focusBoard();
             refresh();
-            loadedGame.printMainline();
+            //loadedGame.printMainline();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(view, "Error loading game: " + e.getMessage(),
                 "Load Error", JOptionPane.ERROR_MESSAGE);

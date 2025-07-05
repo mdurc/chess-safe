@@ -2,7 +2,6 @@ package chess.model.util;
 
 import chess.model.pieceData.Piece;
 import chess.model.pieceData.Piece.PieceType;
-import chess.model.util.ImmutXY;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
@@ -276,7 +275,7 @@ public class NotationParser {
             if (allPossiblePieces.isEmpty()) {
                 throw new IllegalArgumentException("Absolutely no matching pieces from this move: " + originalNotation);
             } else {
-                System.out.println(allPossiblePieces);
+                System.out.println("Possible moves are not empty, but we can't find the desired notation: " + allPossiblePieces);
             }
             throw new IllegalArgumentException("Error: No matching pieces for filtered move: " + originalNotation);
         } else if (filtered.size() > 1) {

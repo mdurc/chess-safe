@@ -9,6 +9,7 @@
 - [x] Provide per-move/turn comments/annotations
 - [x] Provide the option to save current board and all variations to a pgn file that can be loaded back and used within chess websites.
 - [x] Provide option to load board pgn to analyze game.
+- [x] Directory-based game library organization - Create folders within the games directory to organize PGN files
 
 *More advanced features:*
 - [ ] Provide evaluation bar with stockfish
@@ -70,12 +71,21 @@ ChessGame
         - This is mostly important only for when we import games from lichess or chessdotcom that have metadata, though maybe I will add an option to add metadata when saving games from the application.
 
 GameLibrary
-- On creation, all `.pgn` games within the `games/` path are loaded and stored in the map.
+- On creation, all `.pgn` games within the `games/` path are loaded and stored in a hierarchical tree structure.
+- The library now supports creating directories within the `games/` folder to organize PGN files. The interface displays a tree view showing folders and files.
 - The pgns will all be in standard algebraic notation. While SAN is much easier, where it is (startCoordinate endCoordinate), without any other data such as `+` for check or `#` for checkmate, I want this to be compatible with lichess and chessdotcom pgns, and they use algebraic, so I will use algebraic.
 - Because the algebraic is less straightforward to load from, I have to use the ChessGame public interface to find valid moves, through the parsed move that I find from the notation.
 - Parsing will be challenging because I can't make a Move object without a `start` and `end` location, but with algebraic, we only get the `end` location and are left to deduce what the start location must have been from, based on the last known state of the board.
     - Holds path to games library.
-    - Map from saved game filename to ChessGame objects that are filled.
+    - Map from saved game path to ChessGame objects that are filled.
+    - Tree structure with GameLibraryNode objects representing directories and files.
+
+GameLibraryNode
+- Represents a node in the game library file tree.
+- Can be either a directory or a PGN file.
+- Contains metadata about the file/directory including name, full path, and whether it's a directory.
+- For PGN files, stores the associated ChessGame object.
+- Provides methods for tree traversal and display formatting.
 
 BoardState
 - Immutable class used to represent board state/position data

@@ -18,7 +18,7 @@ public class GameNode extends BoardState {
 
     // this will only ever be used to create the root node, that has no starting position, move, or notation
     public GameNode() {
-        super();
+        super(); // initializes the starting board and verifier/board state data
         parentNode = null;
         children = new ArrayList<>();
         move = null;

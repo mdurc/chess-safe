@@ -3,35 +3,40 @@ package chess.view.components;
 import chess.controller.ChessController;
 import chess.model.ChessGame;
 import chess.model.GameLibrary;
+import chess.model.GameLibraryNode;
 
 import javax.swing.*;
-
+import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 public class GameLibraryPanel extends JPanel {
     private final ChessController controller;
-    private final DefaultListModel<String> listModel;
-    private final JList<String> gameList;
+    private final DefaultTreeModel treeModel;
+    private final JTree gameTree;
+    private final DefaultMutableTreeNode rootTreeNode;
 
     public GameLibraryPanel(ChessController controller) {
         this.controller = controller;
         setLayout(new BorderLayout());
 
-        listModel = new DefaultListModel<>();
-        gameList = new JList<>(listModel);
-        gameList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        rootTreeNode = new DefaultMutableTreeNode(controller.getLibPath());
+        treeModel = new DefaultTreeModel(rootTreeNode);
+        gameTree = new JTree(treeModel);
+        gameTree.setRootVisible(true);
+        gameTree.setShowsRootHandles(true);
+        gameTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 3));
+        // distinguish file/directory icons in the library based on tree nodes
+        gameTree.setCellRenderer(new GameLibraryTreeCellRenderer());
+
+        JPanel buttonPanel = new JPanel(new GridLayout(2, 3, 5, 5));
         buttonPanel.add(createButton("Load", this::loadGame));
         buttonPanel.add(createButton("Delete", this::deleteGame));
-        buttonPanel.add(createButton("New", this::newGame));
-        buttonPanel.add(createButton("Save Curr", this::saveCurrentGame));
+        buttonPanel.add(createButton("Start New Game", this::startNewGame));
+        buttonPanel.add(createButton("Save Current", this::saveCurrentGame));
+        buttonPanel.add(createButton("New Folder", this::createFolder));
         buttonPanel.add(createButton("Import", this::importPgn));
 
         JPanel searchPanel = new JPanel(new BorderLayout());
@@ -41,10 +46,10 @@ public class GameLibraryPanel extends JPanel {
         searchPanel.add(searchField, BorderLayout.CENTER);
 
         add(searchPanel, BorderLayout.NORTH);
-        add(new JScrollPane(gameList), BorderLayout.CENTER);
+        add(new JScrollPane(gameTree), BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
 
-        refreshGameList();
+        refreshGameTree();
     }
 
     private JButton createButton(String text, ActionListener listener) {
@@ -53,44 +58,124 @@ public class GameLibraryPanel extends JPanel {
         return button;
     }
 
-    private void refreshGameList() {
-        listModel.clear();
-        controller.getLibrarySavedGames().forEach(listModel::addElement);
+    private void refreshGameTree() {
+        rootTreeNode.removeAllChildren();
+        buildTreeFromNode(controller.getLibraryRootNode(), rootTreeNode);
+        treeModel.reload();
+        expandAllNodes();
+    }
+
+    private void buildTreeFromNode(GameLibraryNode node, DefaultMutableTreeNode treeNode) {
+        for (GameLibraryNode child : node.getChildren()) {
+            DefaultMutableTreeNode childTreeNode = new DefaultMutableTreeNode(child);
+            treeNode.add(childTreeNode);
+            if (child.isDirectory()) {
+                buildTreeFromNode(child, childTreeNode);
+            }
+        }
+    }
+
+    private void expandAllNodes() {
+        for (int i = 0; i < gameTree.getRowCount(); i++) {
+            gameTree.expandRow(i);
+        }
+    }
+
+    private GameLibraryNode getSelectedNode() {
+        DefaultMutableTreeNode selectedNode =
+            (DefaultMutableTreeNode) gameTree.getLastSelectedPathComponent();
+        if (selectedNode != null &&
+                selectedNode.getUserObject() instanceof GameLibraryNode) {
+            return (GameLibraryNode) selectedNode.getUserObject();
+        }
+        return null;
     }
 
     private void loadGame(ActionEvent e) {
-        String selected = gameList.getSelectedValue();
-        if (selected != null) {
-            controller.loadGameFromLibrary(selected);
+        GameLibraryNode selected = getSelectedNode();
+        if (selected != null && selected.isPgnFile()) {
+            controller.loadGameFromLibrary(selected.getRelativePath());
         } else {
-            JOptionPane.showMessageDialog(this, "No game selected", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Please select a PGN file to load",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void saveCurrentGame(ActionEvent e) {
+        // saves the game to whatever the selected directory currently is
+        GameLibraryNode selected = getSelectedNode();
+        String targetPath = null;
+
         String gameName = controller.getCurrentGameName();
         if (gameName == null) {
             gameName = JOptionPane.showInputDialog(this, "Enter game name:");
         }
-        if (gameName != null && !gameName.trim().isEmpty()) {
-            controller.saveCurrentGameToLibrary(gameName);
-            refreshGameList();
+
+        boolean valid_name = gameName != null && !gameName.trim().isEmpty();
+
+        if (selected != null && selected.isDirectory()) {
+            // save to selected directory
+            if (valid_name) {
+                targetPath = selected.getRelativePath() + "/" + gameName;
+            }
+        } else if (valid_name) {
+            // path is gamename, saving to lib path will be: game/name.
+            // saving to root directory.
+            targetPath = gameName;
+        }
+        if (targetPath != null) {
+            controller.saveGameToLibraryPath(targetPath, controller.getCurrentGame());
+            refreshGameTree();
         }
     }
 
     private void deleteGame(ActionEvent e) {
-        String selected = gameList.getSelectedValue();
+        GameLibraryNode selected = getSelectedNode();
         if (selected != null) {
-            controller.deleteGameFromLibrary(selected);
-            refreshGameList();
+            int result = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to delete '" + selected.getDisplayName() + "'?",
+                "Confirm Delete", JOptionPane.YES_NO_OPTION);
+            if (result == JOptionPane.YES_OPTION) {
+                if (selected.isDirectory()) {
+                    controller.deleteDirectoryFromLibrary(selected.getRelativePath());
+                } else {
+                    controller.deleteGameFromLibrary(selected.getRelativePath());
+                }
+                refreshGameTree();
+            }
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "Please select an item to delete",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void newGame(ActionEvent e) {
+    private void startNewGame(ActionEvent e) {
         controller.startNewGame();
     }
 
+    private void createFolder(ActionEvent e) {
+        GameLibraryNode selected = getSelectedNode();
+        String parentPath = "";
+        if (selected != null && selected.isDirectory()) {
+            parentPath = selected.getRelativePath() + "/";
+        }
+        String folderName = JOptionPane.showInputDialog(this, "Enter folder name:");
+        if (folderName != null && !folderName.trim().isEmpty()) {
+            try {
+                controller.createDirectoryInLibrary(parentPath + folderName);
+                refreshGameTree();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Error creating folder: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
     private void importPgn(ActionEvent e) {
+        GameLibraryNode selected = getSelectedNode();
         JDialog importDialog = new JDialog((Frame)SwingUtilities.getWindowAncestor(this), "Import PGN", true);
         importDialog.setLayout(new BorderLayout());
 
@@ -111,6 +196,10 @@ public class GameLibraryPanel extends JPanel {
         JButton importButton = new JButton("Import");
         importButton.addActionListener(ev -> {
             try {
+                String targetPath = "";
+                if (selected != null && selected.isDirectory()) {
+                    targetPath = selected.getRelativePath() + "/";
+                }
                 String pgn = pgnTextArea.getText().trim();
                 String name = nameField.getText().trim();
 
@@ -128,8 +217,8 @@ public class GameLibraryPanel extends JPanel {
 
                 ChessGame importedGame = GameLibrary.parsePgn(pgn);
                 importedGame.setFilename(name);
-                controller.saveGame(importedGame);
-                refreshGameList();
+                controller.saveGameToLibraryPath(targetPath + name, importedGame);
+                refreshGameTree();
                 importDialog.dispose();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(importDialog,
@@ -149,16 +238,37 @@ public class GameLibraryPanel extends JPanel {
         importDialog.setVisible(true);
     }
 
-    private class SearchDocumentListener implements DocumentListener {
+    private class SearchDocumentListener implements javax.swing.event.DocumentListener {
         @Override
-        public void insertUpdate(DocumentEvent e) { filterList(); }
+        public void insertUpdate(javax.swing.event.DocumentEvent e) { filterTree(); }
         @Override
-        public void removeUpdate(DocumentEvent e) { filterList(); }
+        public void removeUpdate(javax.swing.event.DocumentEvent e) { filterTree(); }
         @Override
-        public void changedUpdate(DocumentEvent e) { filterList(); }
+        public void changedUpdate(javax.swing.event.DocumentEvent e) { filterTree(); }
 
-        private void filterList() {
-            // TODO
+        private void filterTree() {
+            // todo: Implement tree filtering
+        }
+    }
+
+    private static class GameLibraryTreeCellRenderer extends DefaultTreeCellRenderer {
+        @Override
+        public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel,
+                                                     boolean expanded, boolean leaf, int row, boolean hasFocus) {
+            super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+            if (value instanceof DefaultMutableTreeNode) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
+                if (node.getUserObject() instanceof GameLibraryNode) {
+                    GameLibraryNode gameNode = (GameLibraryNode) node.getUserObject();
+                    setText(gameNode.getDisplayName());
+                    if (gameNode.isDirectory()) {
+                        setIcon(UIManager.getIcon("FileView.directoryIcon"));
+                    } else if (gameNode.isPgnFile()) {
+                        setIcon(UIManager.getIcon("FileView.fileIcon"));
+                    }
+                }
+            }
+            return this;
         }
     }
 }

@@ -8,25 +8,37 @@ import chess.model.util.*;
 public class GameLibrary {
     private static final String LIB_DIR = "games/";
     private final Map<String, ChessGame> savedGames = new HashMap<>();
+    private final GameLibraryNode rootNode;
 
     public GameLibrary() {
+        rootNode = new GameLibraryNode("games", LIB_DIR, true);
         loadSavedGames();
     }
+
+    public String getLib() { return LIB_DIR; }
 
     public List<String> getSavedGames() {
         return new ArrayList<>(savedGames.keySet());
     }
 
-    // TODO remove name parameter and solely rely on the game.getFilename()
-    public void saveGame(String name, ChessGame game) throws IOException {
-        if (!name.endsWith(".pgn")) name += ".pgn";
-        Path path = Paths.get(LIB_DIR, name);
-        Files.createDirectories(path.getParent());
-        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+    public GameLibraryNode getRootNode() { return rootNode; }
+
+    public void saveGameToPath(String path, ChessGame game) throws IOException {
+        if (!path.endsWith(".pgn")) path += ".pgn";
+        Path fullPath = Paths.get(LIB_DIR, path);
+        Files.createDirectories(fullPath.getParent());
+        try (BufferedWriter writer = Files.newBufferedWriter(fullPath)) {
             writeHeaders(writer, game);
             writer.write("\n" + generateMovesText(game));
         }
-        savedGames.put(name, game);
+        savedGames.put(path, game);
+        updateFileTree();
+    }
+
+    public void createDirectory(String path) throws IOException {
+        Path fullPath = Paths.get(LIB_DIR, path);
+        Files.createDirectories(fullPath);
+        updateFileTree();
     }
 
     private void writeHeaders(BufferedWriter writer, ChessGame game) throws IOException {
@@ -45,17 +57,17 @@ public class GameLibrary {
 
     private String generateMovesText(ChessGame game) {
         StringBuilder sb = new StringBuilder();
-        GameNode currentNode = game.getFirstPosition();
         int moveNumber = 1;
         boolean isWhiteMove = true;
-        List<GameNode> mainLine = new ArrayList<>();
 
+        List<GameNode> mainLine = new ArrayList<>();
+        GameNode currentNode = game.getFirstPosition();
         while (currentNode != null && !currentNode.getChildren().isEmpty()) {
+            // we skip the blank root node here
             currentNode = currentNode.getNextChild();
             mainLine.add(currentNode);
         }
 
-        currentNode = game.getFirstPosition();
         for (GameNode node : mainLine) {
             if (isWhiteMove) {
                 sb.append(moveNumber).append(". ");
@@ -112,32 +124,100 @@ public class GameLibrary {
     }
 
     public ChessGame loadGame(String name) throws FileNotFoundException {
-        if (!savedGames.containsKey(name)) {
-            throw new FileNotFoundException("Game not found: " + name);
+        // try exact match first
+        if (savedGames.containsKey(name)) {
+            return savedGames.get(name);
         }
-        return savedGames.get(name);
+        // try with .pgn extension
+        String withExtension = name.endsWith(".pgn") ? name : name + ".pgn";
+        if (savedGames.containsKey(withExtension)) {
+            return savedGames.get(withExtension);
+        }
+        // try to find by display name
+        for (Map.Entry<String, ChessGame> entry : savedGames.entrySet()) {
+            String fileName = new File(entry.getKey()).getName();
+            if (fileName.equals(withExtension) || fileName.equals(name)) {
+                return entry.getValue();
+            }
+        }
+        throw new FileNotFoundException("Game not found: " + name);
     }
 
     public void deleteGame(String name) {
         File file = new File(LIB_DIR + name);
         if (file.delete()) {
             savedGames.remove(name);
+            updateFileTree();
         }
+    }
+
+    public void deleteDirectory(String path) {
+        File dir = new File(LIB_DIR + path);
+        if (dir.exists() && dir.isDirectory()) {
+            deleteDirectoryRecursive(dir);
+            updateFileTree();
+        }
+    }
+
+    private void deleteDirectoryRecursive(File dir) {
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteDirectoryRecursive(file);
+                } else {
+                    file.delete();
+                }
+            }
+        }
+        dir.delete();
     }
 
     private void loadSavedGames() {
         File dir = new File(LIB_DIR);
         if (!dir.exists()) dir.mkdirs();
 
-        for (File file : Objects.requireNonNull(dir.listFiles())) {
-            if (file.getName().endsWith(".pgn")) {
+        updateFileTree();
+    }
+
+    private void updateFileTree() {
+        // clear existing children
+        rootNode.getChildren().clear();
+        savedGames.clear();
+
+        File dir = new File(LIB_DIR);
+        if (!dir.exists()) return;
+
+        buildFileTree(dir, rootNode);
+    }
+
+    private void buildFileTree(File directory, GameLibraryNode parentNode) {
+        File[] files = directory.listFiles();
+        if (files == null) return;
+
+        // sort files: directories first, then files
+        Arrays.sort(files, (f1, f2) -> {
+            if (f1.isDirectory() && !f2.isDirectory()) return -1;
+            if (!f1.isDirectory() && f2.isDirectory()) return 1;
+            return f1.getName().compareToIgnoreCase(f2.getName());
+        });
+
+        for (File file : files) {
+            String relativePath = file.getPath().substring(LIB_DIR.length());
+            boolean isDirectory = file.isDirectory();
+            GameLibraryNode node = new GameLibraryNode(file.getName(), file.getPath(), isDirectory);
+            if (isDirectory) {
+                buildFileTree(file, node);
+            } else if (file.getName().toLowerCase().endsWith(".pgn")) {
                 try {
                     ChessGame game = parsePgnFile(file);
-                    savedGames.put(file.getName(), game);
+                    node.setGame(game);
+                    savedGames.put(relativePath, game);
                 } catch (IOException e) {
                     System.err.println("Error loading game: " + file.getName());
                 }
             }
+            parentNode.addChild(node);
         }
     }
 
@@ -171,7 +251,6 @@ public class GameLibrary {
     }
 
     private static void parseHeaderLine(String line, ChessGame game) {
-        System.out.println("Parsing header: " + line);
         int spaceIndex = line.indexOf(" ");
         String key = line.substring(1, spaceIndex);
         String value = line.substring(spaceIndex + 2, line.length() - 2);

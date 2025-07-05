@@ -9,7 +9,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.*;
 import java.awt.event.MouseEvent;
 
-public class MoveHistoryPanel extends JScrollPane {
+public class MoveHistoryPanel extends JPanel {
     private final JList<MoveEntry> moveList;
     private final ChessController controller;
     private final DefaultListModel<MoveEntry> listModel;
@@ -21,6 +21,8 @@ public class MoveHistoryPanel extends JScrollPane {
         this.controller = controller;
         this.listModel = new DefaultListModel<>();
         this.moveList = new JList<>(listModel);
+
+        setLayout(new BorderLayout());
 
         moveList.setCellRenderer(new MoveListRenderer());
         moveList.addMouseListener(new MouseAdapter() {
@@ -41,7 +43,22 @@ public class MoveHistoryPanel extends JScrollPane {
             }
             controller.focusBoard();
         });
-        setViewportView(moveList);
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(createButton("Start New Game", this::startNewGame));
+
+        add(new JScrollPane(moveList), BorderLayout.CENTER);
+        add(buttonPanel, BorderLayout.SOUTH);
+    }
+
+    private JButton createButton(String text, ActionListener listener) {
+        JButton button = new JButton(text);
+        button.addActionListener(listener);
+        return button;
+    }
+
+    private void startNewGame(ActionEvent e) {
+        controller.startNewGame();
     }
 
     public void update() {
