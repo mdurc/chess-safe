@@ -55,93 +55,62 @@ public class GameLibrary {
         }
     }
 
-    private String generateMovesText(ChessGame game) {
+    public static String generateMovesText(ChessGame game) {
         StringBuilder sb = new StringBuilder();
-        int moveNumber = 1;
-
-        List<GameNode> mainLine = new ArrayList<>();
-        GameNode currentNode = game.getFirstPosition();
-        while (currentNode != null && !currentNode.getChildren().isEmpty()) {
-            // we skip the blank root node here
-            currentNode = currentNode.getNextChild();
-            mainLine.add(currentNode);
+        GameNode root = game.getFirstPosition();
+        if (!root.getChildren().isEmpty()) {
+            GameNode firstMove = root.getChildren().get(0);
+            appendMoves(firstMove, 1, true, sb, false, false, false);
         }
 
-        for (int i = 0; i < mainLine.size(); i += 2) {
-            sb.append(moveNumber).append(".");
-
-            GameNode whiteMove = mainLine.get(i);
-
-            // add white's move
-            sb.append(whiteMove.getNotation());
-            if (whiteMove.getComment() != null && !whiteMove.getComment().isEmpty()) {
-                sb.append(" {").append(whiteMove.getComment()).append("}");
-            }
-
-            // add variations to white's move
-            if (!whiteMove.getChildren().isEmpty()) {
-                for (int j = 1; j < whiteMove.getChildren().size(); j++) {
-                    sb.append(" (");
-                    generateVariationText(whiteMove.getChildren().get(j), moveNumber, true, sb);
-                    sb.append(")");
-                }
-            }
-
-            // add black's move if it exists
-            if (i + 1 < mainLine.size()) {
-                sb.append(" ");
-                GameNode blackMove = mainLine.get(i + 1);
-                sb.append(blackMove.getNotation());
-                if (blackMove.getComment() != null && !blackMove.getComment().isEmpty()) {
-                    sb.append(" {").append(blackMove.getComment()).append("}");
-                }
-
-                // add variations to black's move
-                if (!blackMove.getChildren().isEmpty()) {
-                    for (int j = 1; j < blackMove.getChildren().size(); j++) {
-                        sb.append(" (");
-                        generateVariationText(blackMove.getChildren().get(j), moveNumber, false, sb);
-                        sb.append(")");
-                    }
-                }
-            }
-            sb.append(" ");
-            moveNumber++;
-        }
         return sb.toString().trim();
     }
 
-    private void generateVariationText(GameNode node, int currentMoveNumber, boolean isWhiteMove, StringBuilder sb) {
-        List<GameNode> variationLine = new ArrayList<>();
-        GameNode currentNode = node;
-        while (currentNode != null && !currentNode.getChildren().isEmpty()) {
-            currentNode = currentNode.getChildren().get(0);
-            variationLine.add(currentNode);
-        }
+    private static void appendMoves(GameNode node, int moveNumber,
+                                    boolean isWhiteTurn, StringBuilder sb,
+                                    boolean isFirstInVariation,
+                                    boolean onlyFirstMove,
+                                    boolean skipCurrentMove) {
+        if (node == null) return;
 
-        for (int i = 0; i < variationLine.size(); i += 2) {
-            // add move number before white's move
-            sb.append(currentMoveNumber).append(".");
-
-            // add white's move
-            GameNode whiteMove = variationLine.get(i);
-            sb.append(whiteMove.getNotation());
-            if (whiteMove.getComment() != null && !whiteMove.getComment().isEmpty()) {
-                sb.append(" {").append(whiteMove.getComment()).append("}");
+        // add move number before white's move, or "..." for black's move in variations
+        if (!skipCurrentMove) {
+            if (isWhiteTurn) {
+                sb.append(moveNumber).append(". ");
+            } else if (isFirstInVariation) {
+                sb.append(moveNumber).append("... ");
             }
 
-            // add black's move if it exists
-            if (i + 1 < variationLine.size()) {
-                sb.append(" ");
-                GameNode blackMove = variationLine.get(i + 1);
-                sb.append(blackMove.getNotation());
-                if (blackMove.getComment() != null && !blackMove.getComment().isEmpty()) {
-                    sb.append(" {").append(blackMove.getComment()).append("}");
-                }
+            // add the current move
+            sb.append(node.getNotation());
+
+            // add comment if present
+            if (node.getComment() != null && !node.getComment().isEmpty()) {
+                sb.append(" {").append(node.getComment()).append("}");
             }
-            sb.append(" ");
-            currentMoveNumber++;
         }
+
+        if (onlyFirstMove) return;
+
+        List<GameNode> children = node.getChildren();
+        if (children.isEmpty()) return;
+
+        int nextMoveNumber = isWhiteTurn ? moveNumber : moveNumber + 1;
+
+        sb.append(" ");
+        appendMoves(children.get(0), nextMoveNumber, !isWhiteTurn, sb, false, true, false);
+
+        // handle variations (all children except the first one which is mainline)
+        for (int i = 1; i < children.size(); i++) {
+            sb.append(" (");
+            appendMoves(children.get(i), nextMoveNumber, !isWhiteTurn, sb, true, false, false);
+            sb.append(")");
+        }
+
+        if (children.size() > 1) sb.append(" ");
+
+        // continue with the main line of this branch (first child)
+        appendMoves(children.get(0), nextMoveNumber, !isWhiteTurn, sb, false, false, true);
     }
 
     public ChessGame loadGame(String name) throws FileNotFoundException {
@@ -284,13 +253,55 @@ public class GameLibrary {
         assert currentNode.getNextChild() == null;
 
         Stack<GameNode> variationStack = new Stack<>();
+        GameNode lastMoveNode = null;
+        StringBuilder pendingComment = new StringBuilder();
 
         // split by space, before ( and after )
         // "move1 (move2) move3" ==> ["move1", "(", "move2", ")", "move3"]
         String[] tokens = movesText.split("\s|(?=[()])|(?<=[()])");
-        for (String token : tokens) {
+        for (int i = 0; i < tokens.length; ++i) {
+            String token = tokens[i];
+
             token = token.trim();
             if (token.isEmpty()) continue;
+
+            // handle comments (they may be standalone or attached to a move)
+            if (token.startsWith("{")) {
+                StringBuilder commentBuffer = new StringBuilder();
+                while (!token.endsWith("}") && i < tokens.length - 1) {
+                    commentBuffer.append(token).append(" ");
+                    token = tokens[++i];
+                }
+                String comment = commentBuffer.append(token)
+                    .toString()
+                    .substring(1, commentBuffer.length() - 1)
+                    .trim();
+
+                if (!comment.contains("[%cal")) {
+                    pendingComment.append(comment);
+                }
+                continue;
+            } else if (token.contains("{")) {
+                // embedded comment in move+comment token
+                int start = token.indexOf("{");
+                String before = token.substring(0, start).trim();
+
+                String after = token.substring(start + 1).trim();
+                StringBuilder commentBuffer = new StringBuilder();
+                while (!after.endsWith("}") && i < tokens.length - 1) {
+                    commentBuffer.append(after).append(" ");
+                    after = tokens[++i];
+                }
+                String comment = commentBuffer.append(after)
+                    .toString()
+                    .substring(1, commentBuffer.length() - 1)
+                    .trim();
+
+                if (!comment.contains("[%cal")) {
+                    pendingComment.append(comment);
+                }
+                token = before; // keep the move part for processing
+            }
 
             if (token.equals("(")) {
                 // new variation
@@ -311,31 +322,48 @@ public class GameLibrary {
                 if (parts.length > 1) {
                     //moveNumber = Integer.parseInt(parts[0]);
                     token = parts[1].trim();
+                } else {
+                    // skip the number and dot
+                    continue;
                 }
-                continue;
+            }
+
+            // Handle "..." format for black moves in variations
+            if (token.contains("...")) {
+                String[] parts = token.split("\\.\\.\\.");
+                if (parts.length > 1) {
+                    //moveNumber = Integer.parseInt(parts[0]);
+                    token = parts[1].trim();
+                } else {
+                    // skip the number and dots
+                    continue;
+                }
             }
 
             if (token.equals("*") || token.equals("1-0") || token.equals("0-1")) { // Game termination
                 continue;
             }
 
-            // Handle main move parsing
-            Move move = NotationParser.parseMove(token, currentNode);
-            if (move != null) {
-                // Handle variations
-                currentNode = currentNode.addNode(move);
-            }
-
-            // Handle comments
-            if (token.contains("{")) {
-                int start = token.indexOf("{");
-                int end = token.indexOf("}");
-                if (end > start) {
-                    String comment = token.substring(start+1, end);
-                    currentNode.setComment(comment);
+            if (!token.isEmpty()) {
+                Move move = NotationParser.parseMove(token, currentNode);
+                if (move != null) {
+                    if (pendingComment.length() != 0) {
+                        assert lastMoveNode != null;
+                        lastMoveNode.setComment(pendingComment.toString());
+                        pendingComment.setLength(0);
+                    }
+                    currentNode = currentNode.addNode(move);
+                    lastMoveNode = currentNode;
                 }
+            } else if (pendingComment != null && lastMoveNode != null) {
+                // no move parsed, attach to last valid move
+                lastMoveNode.setComment(pendingComment.toString());
+                pendingComment.setLength(0);
             }
         }
+        // attach final pending comment if nothing else was done
+        if (pendingComment != null && lastMoveNode != null) {
+            lastMoveNode.setComment(pendingComment.toString());
+        }
     }
-
 }

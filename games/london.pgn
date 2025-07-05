@@ -1,0 +1,18 @@
+[Event "First sideline 3. c3 (played in 16% of games)"]
+[Site "https://lichess.org/study/vBLXRqzM/Y1JGmRF6"]
+[Date "?"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "A45"]
+[StudyName "Beat the London with 1... Nf6"]
+[UTCTime "14:45:00"]
+[ChapterName "First sideline 3. c3 (played in 16% of games)"]
+[Annotator "https://lichess.org/@/durcan"]
+[Opening "Indian Defense"]
+[ChapterURL "https://lichess.org/study/3m9LlB4e/lVWOA3NF"]
+[UTCDate "2023.06.26"]
+
+1. d4 Nf6 2. Bf4 c5 3. c3 Qb6 4. Qb3 {White offers a queen trade, the most popular move by far. Black can respond with a very forcing line which will give Black a favorable position in the end.} (4. b3 cxd4 5. cxd4 (5. Qxd4 Qxd4 6. cxd4 Nc6 {This position is pleasant for Black. The engine agrees  ( Stockfish: -0.7 ) . Black has also disallowed White's London setup.})  Nc6 6. e3 {Every London player will play 6. e3 here. It's the most played move by far, but it's a huge blunder...} e5 7. dxe5 Bb4+ 8. Nd2 Ne4 9. Nf3 g5 10. Bxg5 Nxe5 11. Nxe5 Bxd2+ 12. Ke2 Qb5+ 13. Nc4 Qxg5) (4. Qc2 cxd4 5. cxd4 {Black cannot take the hanging pawn immediately.} Nc6 6. e3 d5 {Black has already prevented White's London setup and should be happy enough here, but here is an example line of what could happen if White plays the most popular move in this position.} 7. Nc3 Bf5 8. Bd3 (8. Qb3 Qxb3 9. axb3)  Nb4 9. Qa4+ Bd7 10. Bb5 Nd3+ 11. Ke2 Nxf4+ 12. exf4 e6)  cxd4 {White must trade queens to avoid losing a pawn.} 5. Qxb6 axb6 6. cxd4 Nc6 7. e3 Nb4 8. Na3 (8. Kd1 Nxa2 (8... Ne4 9. Bg3)  9. Ke1 Ra5) (8. Kd2 Ne4+ {White will lose at least an exchange.})  d6 9. Nb5 Kd8 10. Na3 {This is a very tactical middlegame where Black has the initiative, and it will surely trouble London players playing White.}
