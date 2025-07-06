@@ -16,6 +16,7 @@ public class GameLibraryPanel extends JPanel {
     private final DefaultTreeModel treeModel;
     private final JTree libraryTree;
     private final DefaultMutableTreeNode rootTreeNode;
+    private JTextField searchField;
 
     public GameLibraryPanel(ChessController controller) {
         this.controller = controller;
@@ -38,7 +39,7 @@ public class GameLibraryPanel extends JPanel {
         buttonPanel.add(createButton("Import", this::importPgn));
 
         JPanel searchPanel = new JPanel(new BorderLayout());
-        JTextField searchField = new JTextField();
+        searchField = new JTextField();
         searchField.getDocument().addDocumentListener(new SearchDocumentListener());
         searchPanel.add(new JLabel("Search:"), BorderLayout.WEST);
         searchPanel.add(searchField, BorderLayout.CENTER);
@@ -202,15 +203,73 @@ public class GameLibraryPanel extends JPanel {
     }
 
     private class SearchDocumentListener implements javax.swing.event.DocumentListener {
+        private javax.swing.Timer searchTimer;
+
+        public SearchDocumentListener() {
+            searchTimer = new javax.swing.Timer(300, e -> filterTree());
+            searchTimer.setRepeats(false);
+        }
+
         @Override
-        public void insertUpdate(javax.swing.event.DocumentEvent e) { filterTree(); }
+        public void insertUpdate(javax.swing.event.DocumentEvent e) { searchTimer.restart(); }
         @Override
-        public void removeUpdate(javax.swing.event.DocumentEvent e) { filterTree(); }
+        public void removeUpdate(javax.swing.event.DocumentEvent e) { searchTimer.restart(); }
         @Override
-        public void changedUpdate(javax.swing.event.DocumentEvent e) { filterTree(); }
+        public void changedUpdate(javax.swing.event.DocumentEvent e) { searchTimer.restart(); }
 
         private void filterTree() {
-            // todo: Implement tree filtering
+            String searchText = searchField.getText().toLowerCase().trim();
+            if (searchText.isEmpty()) {
+                treeModel.setRoot(rootTreeNode);
+                treeModel.reload();
+                return;
+            }
+
+            // create a filtered tree
+            DefaultMutableTreeNode filteredRoot = new DefaultMutableTreeNode(controller.getLibPath());
+            filterNodeRecursively(controller.getLibraryRootNode(), filteredRoot, searchText);
+
+            // update the tree model
+            treeModel.setRoot(filteredRoot);
+            treeModel.reload();
+
+            // expand all nodes to show results
+            expandAllForSearch(libraryTree, new TreePath(filteredRoot));
+        }
+
+        private boolean filterNodeRecursively(GameLibraryNode sourceNode, DefaultMutableTreeNode targetNode, String searchText) {
+            boolean hasMatch = false;
+            for (GameLibraryNode child : sourceNode.getChildren()) {
+                boolean childMatches = false;
+                // check if this node matches the search
+                if (child.getName().toLowerCase().contains(searchText)) {
+                    childMatches = true;
+                }
+                // for directories, check if any children match
+                if (child.isDirectory()) {
+                    DefaultMutableTreeNode childTreeNode = new DefaultMutableTreeNode(child);
+                    boolean childrenMatch = filterNodeRecursively(child, childTreeNode, searchText);
+                    if (childrenMatch) {
+                        targetNode.add(childTreeNode);
+                        hasMatch = true;
+                    }
+                } else if (childMatches) {
+                    // for files, add if they match
+                    targetNode.add(new DefaultMutableTreeNode(child));
+                    hasMatch = true;
+                }
+            }
+            return hasMatch;
+        }
+        private void expandAllForSearch(JTree tree, TreePath parent) {
+            TreeNode node = (TreeNode) parent.getLastPathComponent();
+            if (node.getChildCount() >= 0) {
+                for (int i = 0; i < node.getChildCount(); i++) {
+                    TreePath path = parent.pathByAddingChild(node.getChildAt(i));
+                    expandAllForSearch(tree, path);
+                }
+            }
+            tree.expandPath(parent);
         }
     }
 
